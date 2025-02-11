@@ -26,10 +26,6 @@ class MovieActivity : AppCompatActivity() {
         txtCast.text = getString(R.string.cast, "Actor A, Actress B, Actor C, Actor D, Actor E")
 
         val movies = mutableListOf<Movie>()
-        for (i in 0 until 15){
-            val movie = Movie(R.drawable.movie)
-            movies.add(movie)
-        }
 
         rv.layoutManager = GridLayoutManager(this, 3)
         rv.adapter = MovieAdapter(movies, R.layout.movie_item_similar)
@@ -39,6 +35,7 @@ class MovieActivity : AppCompatActivity() {
 
         supportActionBar?.setHomeAsUpIndicator(R.drawable.baseline_arrow_back_24)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = null
 
         val layerDrawable: LayerDrawable = ContextCompat.getDrawable(this, R.drawable.shadows) as LayerDrawable
         val movieCover = ContextCompat.getDrawable(this, R.drawable.movie_4)
