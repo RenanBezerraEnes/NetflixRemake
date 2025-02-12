@@ -17,6 +17,7 @@ import javax.net.ssl.HttpsURLConnection
 class CategoryTask(private val callback: CallBack) {
 
     private val handler = Handler(Looper.getMainLooper())
+    private var executor = Executors.newSingleThreadExecutor()
 
     interface CallBack {
         fun onResult(categories: List<Category>)
@@ -26,7 +27,7 @@ class CategoryTask(private val callback: CallBack) {
 
     fun execute(url: String) {
         callback.onPreExecute()
-        val executor = Executors.newSingleThreadExecutor()
+        executor = Executors.newSingleThreadExecutor()
 
         executor.execute {
             var urlConnection: HttpsURLConnection? = null
