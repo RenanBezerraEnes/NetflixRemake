@@ -1,35 +1,56 @@
 package co.renanbezerra.netflixremake
 
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.LayerDrawable
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
+import android.view.View
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import co.renanbezerra.netflixremake.model.Movie
+import co.renanbezerra.netflixremake.model.MovieDetail
+import co.renanbezerra.netflixremake.util.DownloadImageTask
+import co.renanbezerra.netflixremake.util.MovieTask
 
-class MovieActivity : AppCompatActivity() {
+class MovieActivity : AppCompatActivity(), MovieTask.CallBack {
+
+    private lateinit var txtTitle: TextView
+    private lateinit var txtDescription: TextView
+    private lateinit var txtCast: TextView
+    private lateinit var progressBar: ProgressBar
+    private lateinit var adapter: MovieAdapter
+    private val movies = mutableListOf<Movie>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_movie)
 
-        val txtTitle: TextView = findViewById(R.id.movie_txt_title)
-        val txtDescription: TextView = findViewById(R.id.movie_txt_desc)
-        val txtCast: TextView = findViewById(R.id.movie_txt_cast)
+        txtTitle = findViewById(R.id.movie_txt_title)
+        txtDescription = findViewById(R.id.movie_txt_desc)
+        txtCast = findViewById(R.id.movie_txt_cast)
+        progressBar = findViewById(R.id.movie_progressBar)
+
         val rv: RecyclerView = findViewById(R.id.movie_rv_similar)
 
-        txtTitle.text = "Batman Begins"
-        txtDescription.text = "This is the description of Batmen movie"
-        txtCast.text = getString(R.string.cast, "Actor A, Actress B, Actor C, Actor D, Actor E")
+        val id = intent?.getIntExtra("id", 0) ?: throw IllegalStateException("Id not found")
 
-        val movies = mutableListOf<Movie>()
+        val url = "https://atway.tiagoaguiar.co/fenix/netflixapp/movie/$id?apiKey=ce653dcd-037c-4f42-bcf5-539c6a516c3f"
 
+        MovieTask(this).execute(url)
+
+
+        adapter = MovieAdapter(movies, R.layout.movie_item_similar)
         rv.layoutManager = GridLayoutManager(this, 3)
-        rv.adapter = MovieAdapter(movies, R.layout.movie_item_similar)
+        rv.adapter = adapter
 
         val toolBar: Toolbar = findViewById(R.id.movie_toolBar)
         setSupportActionBar(toolBar)
@@ -38,11 +59,6 @@ class MovieActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = null
 
-        val layerDrawable: LayerDrawable = ContextCompat.getDrawable(this, R.drawable.shadows) as LayerDrawable
-        val movieCover = ContextCompat.getDrawable(this, R.drawable.movie_4)
-        layerDrawable.setDrawableByLayerId(R.id.cover_drawable, movieCover)
-        val coverImg: ImageView = findViewById(R.id.movie_img)
-        coverImg.setImageDrawable(layerDrawable)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -50,5 +66,35 @@ class MovieActivity : AppCompatActivity() {
             finish()
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    override fun onResult(movieDetail: MovieDetail) {
+        progressBar.visibility = View.GONE
+        txtTitle.text = movieDetail.movie.title
+        txtDescription.text = movieDetail.movie.desc
+        txtCast.text = getString(R.string.cast, movieDetail.movie.cast)
+        movies.clear()
+
+        movies.addAll(movieDetail.similars)
+        adapter.notifyDataSetChanged()
+
+        DownloadImageTask(object : DownloadImageTask.CallBack {
+            override fun onResult(bitmap: Bitmap) {
+                val layerDrawable: LayerDrawable = ContextCompat.getDrawable(this@MovieActivity, R.drawable.shadows) as LayerDrawable
+                val movieCover = BitmapDrawable(resources, bitmap)
+                layerDrawable.setDrawableByLayerId(R.id.cover_drawable, movieCover)
+                val coverImg: ImageView = findViewById(R.id.movie_img)
+                coverImg.setImageDrawable(layerDrawable)
+            }
+        }).execute(movieDetail.movie.coverUrl)
+    }
+
+    override fun onFailure(message: String) {
+        progressBar.visibility = View.GONE
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    }
+
+    override fun onPreExecute() {
+        progressBar.visibility = View.VISIBLE
     }
 }
