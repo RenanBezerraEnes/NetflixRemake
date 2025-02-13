@@ -8,10 +8,13 @@ import android.widget.ImageView
 import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
 import co.renanbezerra.netflixremake.model.Movie
-import co.renanbezerra.netflixremake.util.DownloadImageTask
 import com.squareup.picasso.Picasso
 
-class MovieAdapter(private val movies: List<Movie>, @LayoutRes private val layoutId: Int) :
+class MovieAdapter(
+    private val movies: List<Movie>,
+    @LayoutRes private val layoutId: Int,
+    private val onItemClickListener: ((Int) -> Unit)? = null
+) :
     RecyclerView.Adapter<MovieAdapter.MovieViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MovieViewHolder {
@@ -31,6 +34,11 @@ class MovieAdapter(private val movies: List<Movie>, @LayoutRes private val layou
     inner class MovieViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         fun bind(movie: Movie) {
             val imageCover: ImageView = itemView.findViewById(R.id.movie_image)
+
+            //Adding touch to navigate to movie details
+            imageCover.setOnClickListener {
+                onItemClickListener?.invoke(movie.id)
+            }
 //            DownloadImageTask(object : DownloadImageTask.CallBack{
 //                override fun onResult(bitmap: Bitmap) {
 //                    imageCover.setImageBitmap(bitmap)
